@@ -4,21 +4,26 @@ from signLanguage.exception import SignException
 from signLanguage.components.data_ingestion import DataIngestion
 from signLanguage.components.data_validation import DataValidation
 from signLanguage.components.model_trainer import ModelTrainer
+from signLanguage.components.model_pusher import ModelPusher
+from signLanguage.configuration.s3_operations import S3Operation
 
 from signLanguage.entity.config_entity import (DataIngestionConfig,
                                                DataValidationConfig,
-                                               ModelTrainerConfig
+                                               ModelTrainerConfig,
+                                               ModelPusherConfig
                                                 )
 
 from signLanguage.entity.artifacts_entity import (DataIngestionArtifact,
                                                   DataValidationArtifact,
-                                                  ModelTrainerArtifact)
+                                                  ModelTrainerArtifact,
+                                                  ModelPusherArtifacts)
 
 class TrainPipeline:
     def __init__(self):
         self.data_ingestion_config = DataIngestionConfig()
         self.data_validation_config = DataValidationConfig()
         self.model_trainer_config = ModelTrainerConfig()
+        self.model_pusher_config = ModelPusherConfig()
 
 
     
@@ -82,7 +87,22 @@ class TrainPipeline:
 
         except Exception as e:
             raise SignException(e, sys)
-        
+    
+    
+    def start_model_pusher(self, model_trainer_artifact: ModelTrainerArtifact, s3: S3Operation):
+
+        try:
+            model_pusher = ModelPusher(
+                model_pusher_config=self.model_pusher_config,
+                model_trainer_artifact= model_trainer_artifact,
+                s3=s3
+                
+            )
+            model_pusher_artifact = model_pusher.initiate_model_pusher()
+            return model_pusher_artifact
+        except Exception as e:
+            raise SignException(e, sys)
+
 
     
     def run_pipeline(self) -> None:
